@@ -21,39 +21,7 @@ typedef struct Node {
  */
 typedef struct {
     Node* head;  /**< Pointer to the first node in the bucket */
-    int count;   /**< Number of nodes in the bucket */
 } Bucket;
-
-/**
- * @brief Checks if a number is prime
- * @param num The number to check
- * @return true if the number is prime, false otherwise
- */
-bool isPrime(int num) {
-    if (num < 2)
-        return false;
-    for (int i = 2; i * i <= num; ++i) {
-        if (num % i == 0)
-            return false;
-    }
-    return true;
-}
-
-/**
- * @brief Generates an array of prime numbers
- * @param size The number of prime numbers to generate
- * @param primeTable Array to store the generated prime numbers
- */
-void primeTableCreation(int size, int *primeTable) {
-    int count = 0, num = 2;
-    while (count < size + 1) {
-        if (isPrime(num)) {
-            primeTable[count] = num;
-            count++;
-        }
-        ++num;
-    }
-}
 
 /**
  * @brief Initializes all buckets in the hash table
@@ -63,25 +31,22 @@ void primeTableCreation(int size, int *primeTable) {
 void initializeBuckets(Bucket buckets[], int size) {
     for (int i = 0; i < size; i++) {
         buckets[i].head = NULL;
-        buckets[i].count = 0;
     }
 }
 
 /**
- * @brief Generates a hash key for a given word
+ * @brief Generates a hash key for a given word using djb2 algorithm
  * @param word The word to hash
- * @param cnt Index for the prime table
  * @param size Size of the hash table
- * @param primeTable Array of prime numbers
  * @return The generated hash key
  */
-int hashKeyGen(char word[], int cnt, int size, int primeTable[]) {
-    int asciiSum = 0, in = 0;
-    while (word[in] != '\0') {
-        asciiSum += (int)word[in];
-        in++;
+unsigned int hashKeyGen(const char *word, int size) {
+    unsigned long hash = 5381;
+    int c;
+    while ((c = *word++)) {
+        hash = ((hash << 5) + hash) + c; // hash * 33 + c
     }
-    return (asciiSum * primeTable[cnt]) % size;
+    return hash % size;
 }
 
 /**
@@ -90,32 +55,38 @@ int hashKeyGen(char word[], int cnt, int size, int primeTable[]) {
  * @param age Person's age
  * @return Pointer to the newly created node
  */
-Node* createNode(char name[], int age) {
+Node* createNode(const char name[], int age) {
     Node* newNode = (Node*)malloc(sizeof(Node));
     if (newNode == NULL) {
         printf("Memory allocation failed\n");
         exit(1);
     }
-    
     strncpy(newNode->person_name, name, MAX_SIZE - 1);
-    newNode->person_name[MAX_SIZE - 1] = '\0';  // Ensure null termination
+    newNode->person_name[MAX_SIZE - 1] = '\0'; // Ensure null termination
     newNode->age = age;
     newNode->next = NULL;
-    
     return newNode;
 }
 
 /**
+ * @brief Clears the input buffer after scanf operations
+ */
+void clearInputBuffer() {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
+}
+
+/**
  * @brief Inserts a person into the hash table
- * @param cnt Index for the prime table
  * @param hashKey The bucket index
  * @param buckets Array of buckets
  * @param name Person's name
  */
-void insertTable(int cnt, int hashKey, Bucket buckets[], char name[]) {
+void insertTable(int hashKey, Bucket buckets[], const char name[]) {
     int age;
     printf("Enter age for %s: ", name);
     scanf("%d", &age);
+    clearInputBuffer();  // Clear the input buffer
     
     // Check if person already exists
     Node* current = buckets[hashKey].head;
@@ -128,14 +99,10 @@ void insertTable(int cnt, int hashKey, Bucket buckets[], char name[]) {
         current = current->next;
     }
     
-    // Create new node
+    // Create new node and insert at head
     Node* newNode = createNode(name, age);
-    
-    // Add to the beginning of the chain (could also add to the end)
     newNode->next = buckets[hashKey].head;
     buckets[hashKey].head = newNode;
-    buckets[hashKey].count++;
-    
     printf("Person added to bucket %d\n", hashKey);
 }
 
@@ -144,13 +111,10 @@ void insertTable(int cnt, int hashKey, Bucket buckets[], char name[]) {
  * @param buckets Array of buckets
  * @param size Size of the hash table
  * @param name Person's name to search
- * @param primeTable Array of prime numbers
- * @param cnt Index for the prime table
  * @return Pointer to the node if found, NULL otherwise
  */
-Node* searchPerson(Bucket buckets[], int size, char name[], int primeTable[], int cnt) {
-    int hashKey = hashKeyGen(name, cnt, size, primeTable);
-    
+Node* searchPerson(Bucket buckets[], int size, const char name[]) {
+    int hashKey = hashKeyGen(name, size);
     Node* current = buckets[hashKey].head;
     while (current != NULL) {
         if (strcmp(current->person_name, name) == 0) {
@@ -158,7 +122,6 @@ Node* searchPerson(Bucket buckets[], int size, char name[], int primeTable[], in
         }
         current = current->next;
     }
-    
     return NULL; // Person not found
 }
 
@@ -167,55 +130,56 @@ Node* searchPerson(Bucket buckets[], int size, char name[], int primeTable[], in
  * @param buckets Array of buckets
  * @param size Size of the hash table
  * @param name Person's name to delete
- * @param primeTable Array of prime numbers
- * @param cnt Index for the prime table
  * @return true if person was deleted, false otherwise
  */
-bool deletePerson(Bucket buckets[], int size, char name[], int primeTable[], int cnt) {
-    int hashKey = hashKeyGen(name, cnt, size, primeTable);
-    
-    Node* current = buckets[hashKey].head;
-    Node* prev = NULL;
-    
-    // Find the node to delete
+bool deletePerson(Bucket buckets[], int size, const char name[]) {
+    int hashKey = hashKeyGen(name, size);
+    Node *current = buckets[hashKey].head, *prev = NULL;
     while (current != NULL) {
         if (strcmp(current->person_name, name) == 0) {
-            // If it's the head node
             if (prev == NULL) {
                 buckets[hashKey].head = current->next;
             } else {
                 prev->next = current->next;
             }
-            
             free(current);
-            buckets[hashKey].count--;
             return true;
         }
         prev = current;
         current = current->next;
     }
-    
-    return false; // Person not found
+    return false;
 }
 
 /**
- * @brief Prints the contents of the hash table
+ * @brief Prints the hash table contents
  * @param buckets Array of buckets
  * @param size Size of the hash table
  */
-void printTable(Bucket buckets[], int size) {
+void printHashTable(Bucket buckets[], int size) {
+    printf("\n----- Hash Table Contents -----\n");
+    int totalEntries = 0;
+    
     for (int i = 0; i < size; i++) {
-        if (buckets[i].count > 0) {
-            printf("Bucket %d (Chain length: %d):\n", i, buckets[i].count);
-            
+        if (buckets[i].head != NULL) {
+            printf("Bucket number: %d\n", i);
             Node* current = buckets[i].head;
-            int j = 0;
+            int cnt = 1;
             
             while (current != NULL) {
-                printf("  [%d] Name: %s, Age: %d\n", j++, current->person_name, current->age);
+                printf("[%d] Name: %s, Age: %d\n", cnt, current->person_name, current->age);
                 current = current->next;
+                cnt++;
+                totalEntries++;
             }
+            printf("\n");  // Add a line break between buckets
         }
+    }
+    
+    if (totalEntries == 0) {
+        printf("Hash table is empty.\n");
+    } else {
+        printf("Total entries: %d\n", totalEntries);
     }
 }
 
@@ -233,7 +197,6 @@ void freeHashTable(Bucket buckets[], int size) {
             free(temp);
         }
         buckets[i].head = NULL;
-        buckets[i].count = 0;
     }
 }
 
@@ -245,12 +208,8 @@ int main(void) {
     int size;
     printf("Enter the size of the hash table: ");
     scanf("%d", &size);
+    clearInputBuffer();  // Clear the input buffer after scanf
     
-    // Generate prime number table
-    int primeTable[size + 1];
-    primeTableCreation(size + 1, primeTable);
-    
-    // Initialize the hash table with buckets
     Bucket* buckets = (Bucket*)malloc(size * sizeof(Bucket));
     if (buckets == NULL) {
         printf("Memory allocation failed\n");
@@ -258,8 +217,7 @@ int main(void) {
     }
     
     initializeBuckets(buckets, size);
-    
-    int choice, cnt = 0;
+    int choice;
     char name[MAX_SIZE];
     
     do {
@@ -267,43 +225,45 @@ int main(void) {
         printf("1. Insert a person\n");
         printf("2. Search for a person\n");
         printf("3. Delete a person\n");
-        printf("4. Print hash table\n");
+        printf("4. Display hash table\n");
         printf("5. Exit\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
+        clearInputBuffer();  // Clear the input buffer
         
         switch (choice) {
             case 1:
                 printf("Enter name: ");
-                scanf("%s", name);
-                int hashKey = hashKeyGen(name, cnt, size, primeTable);
-                insertTable(cnt, hashKey, buckets, name);
-                cnt++;
+                scanf("%255s", name);
+                clearInputBuffer();
+                insertTable(hashKeyGen(name, size), buckets, name);
                 break;
                 
             case 2:
                 printf("Enter name to search: ");
-                scanf("%s", name);
-                Node* result = searchPerson(buckets, size, name, primeTable, cnt);
+                scanf("%255s", name);
+                clearInputBuffer();
+                Node* result = searchPerson(buckets, size, name);
                 if (result != NULL) {
-                    printf("Person found! Name: %s, Age: %d\n", result->person_name, result->age);
+                    printf("Found: %s, Age: %d\n", name, result->age);
                 } else {
-                    printf("Person not found\n");
+                    printf("Person '%s' not found\n", name);
                 }
                 break;
                 
             case 3:
                 printf("Enter name to delete: ");
-                scanf("%s", name);
-                if (deletePerson(buckets, size, name, primeTable, cnt)) {
-                    printf("Person deleted successfully\n");
+                scanf("%255s", name);
+                clearInputBuffer();
+                if (deletePerson(buckets, size, name)) {
+                    printf("Person '%s' deleted successfully\n", name);
                 } else {
-                    printf("Person not found\n");
+                    printf("Person '%s' not found\n", name);
                 }
                 break;
                 
             case 4:
-                printTable(buckets, size);
+                printHashTable(buckets, size);
                 break;
                 
             case 5:
@@ -311,14 +271,11 @@ int main(void) {
                 break;
                 
             default:
-                printf("Invalid choice. Please try again.\n");
+                printf("Invalid choice! Please try again.\n");
         }
-        
     } while (choice != 5);
     
-    // Free allocated memory
     freeHashTable(buckets, size);
     free(buckets);
-    
     return 0;
 }
