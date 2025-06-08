@@ -1,4 +1,4 @@
-package ArraysAndHashing;
+package Arrays;
 
 public class RotateOnePlace {
     public static void main(String[] args){

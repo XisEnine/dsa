@@ -1,4 +1,4 @@
-package ArraysAndHashing;
+package Arrays;
 
 public class lc_48 {
     static void reverse(int[] matrix, int start, int end) {

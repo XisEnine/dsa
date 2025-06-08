@@ -1,4 +1,4 @@
-package ArraysAndHashing;
+package Arrays;
 
 public class lc_53 {
     public static int maxSubArray(int[] nums) {

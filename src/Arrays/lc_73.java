@@ -1,4 +1,4 @@
-package ArraysAndHashing;
+package Arrays;
 
 public class lc_73 {
     //to mark whole column as 0

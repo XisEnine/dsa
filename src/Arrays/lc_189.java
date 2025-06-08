@@ -1,4 +1,4 @@
-package ArraysAndHashing;
+package Arrays;
 
 public class lc_189 {
     public void rotate(int[] nums, int k) {

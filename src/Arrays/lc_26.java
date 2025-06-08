@@ -1,4 +1,4 @@
-package ArraysAndHashing;
+package Arrays;
 
 public class lc_26 {
     public static void main(String[] args) {

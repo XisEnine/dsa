@@ -1,4 +1,4 @@
-package ArraysAndHashing;
+package Arrays;
 
 class lc_283 {
     public void moveZeroes(int[] arr) {

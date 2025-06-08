@@ -1,4 +1,4 @@
-package ArraysAndHashing;
+package Arrays;
 
 public class LargestEle {
     public static void main(String[] args) {

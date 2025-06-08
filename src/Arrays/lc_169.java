@@ -1,4 +1,4 @@
-package ArraysAndHashing;
+package Arrays;
 
 public class lc_169 {
     public static int majorityElement(int[] nums) {

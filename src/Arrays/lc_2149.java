@@ -1,4 +1,4 @@
-package ArraysAndHashing;
+package Arrays;
 
 class lc_2149 {
     // For testing purposes

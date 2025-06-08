@@ -1,4 +1,4 @@
-package ArraysAndHashing;
+package Arrays;
 
 public class lc_152 {
     public static int maxProduct(int[] nums) {
